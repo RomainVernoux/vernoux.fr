@@ -1,0 +1,74 @@
+let project_list = fun t ->
+  let return_flag = tdestr t "l_returnflag" in
+  let line_status = tdestr t "l_linestatus" in
+  let sum_qty = tdestr t "sum_qty" in
+  let sum_base_price = tdestr t "sum_base_price" in
+  let sum_disc_price = tdestr t "sum_disc_price" in
+  let sum_charge = tdestr t "sum_charge" in
+  let avg_qty = tdestr t "avg_qty" in
+  let avg_price = tdestr t "avg_price" in
+  let avg_disc = tdestr t "avg_disc" in
+
+  tcons "return_flag" return_flag (
+  tcons "linestatus" line_status (
+  tcons "sum_qty" sum_qty (
+  tcons "sum_base_price" sum_base_price (
+  tcons "sum_disc_price" sum_disc_price (
+  tcons "sum_charge" sum_charge (
+  tcons "avg_qty" avg_qty (
+  tcons "avg_price" avg_price (
+  tcons "avg_disc" avg_disc (
+  tnil)))))))))
+in
+
+let filter = fun t ->
+  = (tdestr t "l_shipdate") 1433936
+in
+
+let group_eq = fun t ->
+  cons (tdestr t "l_returnflag") (
+  cons (tdestr t "l_linestatus") (
+  nil))
+in
+
+let group_agg = fun t ->
+  let quantity = tdestr t "l_quantity" in
+  let extendedprice = tdestr t "l_extendedprice" in
+  let discount = tdestr t "l_discount" in
+  let tax = tdestr t "l_tax" in
+
+  tcons "sum_qty" (sum quantity) (
+  tcons "sum_base_price" (sum extendedprice) (
+  tcons "sum_disc_price" (sum (* extendedprice (- 1 discount))) (
+  tcons "sum_charge" (sum (* extendedprice (* (- 1 discount) (+ 1 tax)))) (
+  tcons "avg_qty" (avg quantity) (
+  tcons "avg_price" (avg extendedprice) (
+  tcons "avg_disc" (avg discount) (
+  tnil)))))))
+in
+
+let sort_attr = fun t ->
+  cons (tdestr t "l_returnflag") (
+  cons (tdestr t "l_linestatus") (
+  nil))
+in
+
+let filtered_list =
+  Select[
+    filter
+  ](
+      Scan[
+        db.lineitem
+      ]())
+in
+
+Project[
+  project_list
+](
+    Sort[
+      sort_attr
+    ](
+        Group[
+          group_eq, group_agg
+        ](
+            filtered_list)))

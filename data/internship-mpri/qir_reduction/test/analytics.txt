@@ -1,0 +1,67 @@
+/* Constructs the list of projected attributes */
+let project_list = fun t ->
+  let real_cost = 1 in
+  let margin = 1 in
+
+  let return_flag = tdestr t "l_returnflag" in
+  let line_status = tdestr t "l_linestatus" in
+  let sum_base_price = tdestr t "sum_base_price" in
+  let sum_disc_price = tdestr t "sum_disc_price" in
+  let sum_charge = tdestr t "sum_charge" in
+  let avg_base_price = tdestr t "avg_base_price" in
+  let avg_disc_price = tdestr t "avg_disc_price" in
+  let avg_charge = tdestr t "avg_charge" in
+
+  tcons "return_flag" return_flag (
+  tcons "line_status" line_status (
+  tcons "sum_base_price" sum_base_price (
+  tcons "sum_disc_price" sum_disc_price (
+  tcons "sum_charge" sum_charge (
+  tcons "sum_real_cost" (* sum_base_price real_cost) (
+  tcons "sum_margin" (* sum_base_price margin) (
+  tcons "avg_base_price" avg_base_price (
+  tcons "avg_disc_price" avg_disc_price (
+  tcons "avg_charge" avg_charge (
+  tcons "avg_real_cost" (* avg_base_price real_cost) (
+  tcons "avg_margin" (* avg_base_price margin) (
+  tnil))))))))))))
+in
+
+/* Constructs the list of grouping/sorting attributes */
+let group_sort_attr = fun t ->
+  cons (tdestr t "l_returnflag") (
+  cons (tdestr t "l_linestatus") (
+  nil))
+in
+
+/* Constructs the aggregate functions */
+let group_agg = fun t ->
+  let extended_price = tdestr t "l_extendedprice" in
+  let discount = tdestr t "l_discount" in
+  let tax = tdestr t "l_tax" in
+  let disc_price = * extended_price (- 1 discount) in
+  let charge = * disc_price (+ 1 tax) in
+
+  tcons "sum_base_price" (sum extended_price) (
+  tcons "sum_disc_price" (sum disc_price) (
+  tcons "sum_charge" (sum charge) (
+  tcons "avg_base_price" (avg extended_price) (
+  tcons "avg_disc_price" (avg disc_price) (
+  tcons "avg_charge" (avg charge) (
+  tnil))))))
+in
+
+
+/* Main query */
+Project[
+  project_list
+](
+    Sort[
+      group_sort_attr
+    ](
+        Group[
+          group_sort_attr, group_agg
+        ](
+            Scan[
+              db.lineitem
+            ]())))

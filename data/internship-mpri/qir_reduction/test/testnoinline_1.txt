@@ -1,0 +1,3 @@
+let incomp_op = fun child -> Select[x](child) in
+
+Project[fun t -> tnil](incomp_op (incomp_op (Scan[db.foo]())))

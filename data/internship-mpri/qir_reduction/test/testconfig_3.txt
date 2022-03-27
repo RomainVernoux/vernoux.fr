@@ -1,0 +1,5 @@
+let f = fun x -> db.lineitem in
+
+let g = fun f -> Scan[f 1]() in
+
+(if true then g else g) f

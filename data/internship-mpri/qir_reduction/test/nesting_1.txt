@@ -1,0 +1,28 @@
+let project_list =
+  fun t -> tcons "name" (tdestr t "name") tnil
+in
+
+let g = fun t -> true in
+
+let f = fun t -> g t in
+
+let filter = fun t -> f t in
+
+let filtered_list =
+  Select[
+    filter
+  ](
+      Scan[
+        db.table
+      ]())
+in
+
+Project[
+  project_list
+](
+    Select[
+      fun t -> Exists (Project[project_list](filtered_list))
+    ](
+        Scan[
+          db.lineitem
+        ]()))

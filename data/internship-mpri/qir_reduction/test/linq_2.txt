@@ -1,0 +1,10 @@
+let satisfies = fun p ->
+  Project[
+    fun w -> tcons "name" (tdestr w "name") tnil
+  ](
+    Select[
+      fun w -> p (tdestr w "age")
+    ](
+        Scan[db.people]()))
+in
+satisfies (fun x -> and (<= 30 x) (< x 40))

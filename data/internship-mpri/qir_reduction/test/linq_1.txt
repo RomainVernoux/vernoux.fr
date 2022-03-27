@@ -1,0 +1,10 @@
+let range = fun a -> fun b ->
+  Project[
+    fun w -> tcons "name" (tdestr w "name") tnil
+  ](
+    Select[
+      fun w -> and (<= a (tdestr w "age")) (< (tdestr w "age") b)
+    ](
+        Scan[db.people]()))
+in
+range 30 40

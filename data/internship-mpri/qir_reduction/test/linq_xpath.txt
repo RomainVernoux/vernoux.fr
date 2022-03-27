@@ -1,0 +1,92 @@
+/* Fixpoint */
+let zfix =
+  fun f -> (fun x -> f (fun y -> (x x) y)) (fun x -> f (fun y -> (x x) y))
+in
+
+/* Utilities to get the first elements of lists */
+let l1 = fun l -> destr l nil (fun hd -> fun tl -> hd) in
+let l2 = fun l -> destr l nil (fun hd -> fun tl -> l1 tl) in
+let l3 = fun l -> destr l nil (fun hd -> fun tl -> l2 tl) in
+
+/* any xs p returns true iff there is a tuple in xs satisfying p */
+let any = fun xs -> fun p ->
+  Exists (Project[fun t -> tnil](Select[fun t -> p t](Scan[xs]())))
+in
+
+/* Translation of an axis */
+let axis_aux = fun comb -> fun ax ->
+  let axis_type = l1 ax in
+  if (= axis_type "Self") then
+    (fun s -> fun t -> (= (tdestr s "id") (tdestr t "id")))
+  else if (= axis_type "Child") then
+    (fun s -> fun t -> (= (tdestr s "id") (tdestr t "parent")))
+  else if (= axis_type "Descendant") then
+    (fun s -> fun t -> and (< (tdestr s "pre") (tdestr t "pre"))
+                          (<= (tdestr t "post") (tdestr s "post")))
+  else if (= axis_type "DescendantOrSelf") then
+    (fun s -> fun t -> and (<= (tdestr s "pre") (tdestr t "pre"))
+                          (<= (tdestr t "post") (tdestr s "post")))
+  else if (= axis_type "Following") then
+    (fun s -> fun t -> (< (tdestr s "post") (tdestr t "pre")))
+  else if (= axis_type "FollowingSibling") then
+    (fun s -> fun t -> and (< (tdestr s "post") (tdestr t "pre"))
+                          (= (tdestr s "parent") (tdestr t "parent")))
+  else if (= axis_type "Rev") then
+    (let reversed_axis = l2 ax in
+    (fun s -> fun t -> comb reversed_axis t s))
+  else
+    nil
+in
+let axis = fun ax -> zfix axis_aux ax in
+
+/* Translation of a path */
+let path_aux = fun comb -> fun pa ->
+  let path_type = l1 pa in
+  if (= path_type "Seq") then
+    (let p = l2 pa in
+    let q = l3 pa in
+    (fun s -> fun u -> any db.xml (fun t -> and (comb p s t) (comb q t u))))
+  else if (= path_type "Axis") then
+    (let ax = l2 pa in
+    axis ax)
+  else if (= path_type "Name") then
+    (let name = l2 pa in
+    (fun s -> fun t -> and (= (tdestr s "id") (tdestr t "id"))
+                           (= (tdestr s "name") name)))
+  else if (= path_type "Filter") then
+    (let p = l2 pa in
+    (fun s -> fun t -> and (= (tdestr s "id") (tdestr t "id"))
+                           (any db.xml (fun u -> comb p s u))))
+  else
+    nil
+in
+let path = fun pa -> zfix path_aux pa in
+
+/* Query to find the root */
+let xml_root =
+  Project[fun t ->
+    tcons "rid" (tdestr t "id") (
+    tcons "rparent" (tdestr t "parent") (
+    tcons "rname" (tdestr t "name") (
+    tcons "rpre" (tdestr t "pre") (
+    tcons "rpost" (tdestr t "post")
+    tnil))))
+  ](
+      Select[
+        fun t -> (= (tdestr t "parent") (-0 1))
+      ](
+          Scan[db.xml]()))
+in
+
+/* Translation of a xpath */
+let xpath = fun pa ->
+  Project[fun t -> tcons "id" (tdestr t "id") tnil](
+      Join[fun root -> fun s -> path pa root s](
+          xml_root, Scan[db.xml]()))
+in
+
+/* Running example */
+let self = (cons "Self" nil) in
+let self_axis = cons "Axis" (cons self nil) in
+let seq = cons "Seq" (cons self_axis (cons self_axis nil)) in
+xpath seq

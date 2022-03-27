@@ -1,0 +1,78 @@
+/* Context */
+/*
+let is_sorted = false in
+let sort_attr = "date" in
+let cat_list = nil in
+let limit = 20 in
+*/
+
+let is_sorted = true in
+let sort_attr = "date" in
+let cat_list = cons "housing" (cons "cars" nil) in
+let limit = 30 in
+
+
+/* Fixpoint */
+let zfix =
+  fun f -> (fun x -> f (fun y -> (x x) y)) (fun x -> f (fun y -> (x x) y))
+in
+
+
+/* Recursively constructs a list of OR of the selected categories */
+let make_cat_filter = fun cat_list -> fun tup ->
+
+  let aux = fun comb -> fun filter -> fun cat_list ->
+    destr cat_list filter (
+      fun hd -> fun tl -> comb (or (= (tdestr tup "category") hd) filter) tl
+    )
+  in
+
+  let aux2 = fun cat_list ->
+    destr cat_list nil (
+      fun hd -> fun tl -> zfix aux (= (tdestr tup "category") hd) tl
+    )
+  in
+
+  aux2 cat_list
+in
+
+
+/* Constructs the ordering attributes */
+let make_ordering = fun attr -> fun tup ->
+  if = attr "price" then
+    cons (tdestr tup "price") nil
+  else if = attr "date" then
+    cons (tdestr tup "timestamp") nil
+  else
+    nil
+in
+
+
+/* Constructs the list of projected attributes */
+let project_list = fun tup ->
+  tcons "title" (tdestr tup "title") (
+  tcons "description" (tdestr tup "description") (
+  tnil))
+in
+
+
+/* Base table */
+let ads =
+  Scan[db.ads]()
+in
+
+/* After category filters */
+let ads_filtered =
+  destr cat_list ads (fun hd -> fun tl -> Select[make_cat_filter cat_list](ads))
+in
+
+/* After (optional) ordering */
+let ads_ordered =
+  if is_sorted then
+    Sort[make_ordering sort_attr](ads_filtered)
+  else
+    ads_filtered
+in
+
+/* Main query */
+Project[project_list](Limit[limit](ads_ordered))

@@ -1,0 +1,19 @@
+let zfix = fun f -> (fun x -> f (fun y -> (x x) y)) (fun x -> f (fun y -> (x x) y)) in
+
+let fiboaux = fun comb -> fun x ->
+  if = x 0 then 0
+  else if = x 1 then 1
+  else + (comb (- x 1)) (comb (- x 2)) in
+
+let p = fun t ->
+  tcons "fibo" (zfix fiboaux 7) tnil
+in
+
+let x = db.lineitem in
+
+Project[
+  p
+](
+    Scan[
+      x
+    ]())

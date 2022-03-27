@@ -1,0 +1,30 @@
+/* Constructs the list of projected attributes */
+let project_list = fun tup ->
+  tcons "user_id" (tdestr tup "user_id") (
+  tnil)
+in
+
+/* Constructs the join condition */
+let join_cond = fun tup1 -> fun tup2 ->
+      (if = (tdestr tup1 "ad_id") (tdestr tup2 "ad_id") then false else true)
+in
+
+/* Unexperienced users */
+let ads_from_unex_users =
+  Select[
+    fun tup -> <Truffle> (tdestr tup "user_id")
+  ](
+      Scan[
+        db.ads
+      ]())
+in
+
+/* Main query */
+Project[
+  project_list
+](
+    Join[
+      join_cond
+    ](
+        ads_from_unex_users, ads_from_unex_users
+    ))

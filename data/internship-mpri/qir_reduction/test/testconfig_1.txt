@@ -1,0 +1,3 @@
+let table = db.lineitem in
+
+Scan[table]()

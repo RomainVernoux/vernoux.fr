@@ -1,0 +1,3 @@
+let f = fun x -> fun y -> Scan[y]() in
+
+Project[fun t -> tnil](f 1 db.lineitem)

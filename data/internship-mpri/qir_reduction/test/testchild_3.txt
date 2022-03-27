@@ -1,0 +1,17 @@
+let p_list = fun t ->
+  tcons "a" (tdestr t "l_returnflag")
+  (tcons "b" (tdestr t "l_quantity")
+  tnil)
+in
+
+let filter = fun t ->
+  if = (tdestr t "l_shipdate") 1 then false else true
+in
+
+let table = db.lineitem in
+
+let sc = Scan[table]() in
+
+let filtered_table = Select[filter](sc) in
+
+Project[p_list](filtered_table)
